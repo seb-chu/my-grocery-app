@@ -69,10 +69,10 @@ const ICON_MAP = {
 const DEFAULT_CATEGORIES = [
   { id: 'beef', nameEn: 'Beef & Steak', nameEs: 'Res y Carne', img: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400', pdf: '/beef.pdf' },
   { id: 'chicken', nameEn: 'Poultry & Chicken', nameEs: 'Pollo y Aves', img: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400', pdf: '/chicken.pdf' },
-  { id: 'canned', nameEn: 'Canned Items', nameEs: 'Artículos Enlatados', img: 'https://images.unsplash.com/photo-1584263343327-cc4628614d44?w=400', pdf: '/canned.pdf' },
-  { id: 'produce', nameEn: 'Fresh Produce', nameEs: 'Frutas y Verduras', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400', pdf: '/produce.pdf' },
-  { id: 'bakery', nameEn: 'Bakery & Bread', nameEs: 'Panadería', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400', pdf: '/bakery.pdf' },
-  { id: 'seafood', nameEn: 'Fresh Seafood', nameEs: 'Mariscos Frescos', img: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400', pdf: '/seafood.pdf' },
+  { id: 'canned', nameEn: 'Canned Items', nameEs: 'Artículos Enlatados', img: 'https://images.unsplash.com/photo-1584263343327-cc4628614d44?w=400', pdf: '/beef.pdf' },
+  { id: 'produce', nameEn: 'Fresh Produce', nameEs: 'Frutas y Verduras', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400', pdf: '/beef.pdf' },
+  { id: 'bakery', nameEn: 'Bakery & Bread', nameEs: 'Panadería', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400', pdf: '/beef.pdf' },
+  { id: 'seafood', nameEn: 'Fresh Seafood', nameEs: 'Mariscos Frescos', img: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400', pdf: '/beef.pdf' },
 ];
 
 const Navigation = ({ lang, setLang, onHome }) => (
