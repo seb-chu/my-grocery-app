@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { initializeApp, getApps } from 'firebase/app';
 import { 
   getAuth, 
@@ -17,6 +18,7 @@ import {
 import { 
   ChevronRight, 
   ChevronLeft,
+  Loader2,
   Globe, 
   Beef, 
   Drumstick, 
@@ -32,6 +34,8 @@ import {
   FileText,
   Home
 } from 'lucide-react';
+
+
 
 // --- ROBUST FIREBASE INITIALIZATION ---
 const getFirebaseInstance = () => {
@@ -67,12 +71,12 @@ const ICON_MAP = {
 };
 
 const DEFAULT_CATEGORIES = [
-  { id: 'beef', nameEn: 'Beef & Steak', nameEs: 'Res y Carne', img: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400', pdf: '/beef.pdf' },
-  { id: 'chicken', nameEn: 'Poultry & Chicken', nameEs: 'Pollo y Aves', img: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400', pdf: '/chicken.pdf' },
-  { id: 'canned', nameEn: 'Canned Items', nameEs: 'Artículos Enlatados', img: 'https://images.unsplash.com/photo-1584263343327-cc4628614d44?w=400', pdf: '/beef.pdf' },
-  { id: 'produce', nameEn: 'Fresh Produce', nameEs: 'Frutas y Verduras', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400', pdf: '/beef.pdf' },
-  { id: 'bakery', nameEn: 'Bakery & Bread', nameEs: 'Panadería', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400', pdf: '/beef.pdf' },
-  { id: 'seafood', nameEn: 'Fresh Seafood', nameEs: 'Mariscos Frescos', img: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400', pdf: '/beef.pdf' },
+  { id: 'beef', nameEn: 'Beef & Steak', nameEs: 'Res y Carne', img: 'https://images.unsplash.com/photo-1588168333986-5078d3ae3976?w=400', pdf: 'beef.pdf' },
+  { id: 'chicken', nameEn: 'Poultry & Chicken', nameEs: 'Pollo y Aves', img: 'https://images.unsplash.com/photo-1587593810167-a84920ea0781?w=400', pdf: 'chicken.pdf' },
+  { id: 'canned', nameEn: 'Canned Items', nameEs: 'Artículos Enlatados', img: 'https://images.unsplash.com/photo-1584263343327-cc4628614d44?w=400', pdf: 'beef.pdf' },
+  { id: 'produce', nameEn: 'Fresh Produce', nameEs: 'Frutas y Verduras', img: 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400', pdf: 'beef.pdf' },
+  { id: 'bakery', nameEn: 'Bakery & Bread', nameEs: 'Panadería', img: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400', pdf: 'beef.pdf' },
+  { id: 'seafood', nameEn: 'Fresh Seafood', nameEs: 'Mariscos Frescos', img: 'https://images.unsplash.com/photo-1615141982883-c7ad0e69fd62?w=400', pdf: 'beef.pdf' },
 ];
 
 const Navigation = ({ lang, setLang, onHome }) => (
@@ -89,56 +93,82 @@ const Navigation = ({ lang, setLang, onHome }) => (
   </div>
 );
 
-const PDFViewerPage = ({ category, lang }) => {
-  const [pageNumber, setPageNumber] = useState(1);
-  const totalPages = 5; 
+// Replace your existing pdfjs.GlobalWorkerOptions.workerSrc with this:
+pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
-  const isLocalFile = category.pdf.startsWith('/');
-  
-  // For local files, we use the standard path. 
-  // For external files, we use Google Docs Viewer.
-  const finalUrl = isLocalFile 
-    ? `${category.pdf}#page=${pageNumber}` 
-    : `https://docs.google.com/viewer?url=${encodeURIComponent(category.pdf)}&embedded=true#page=${pageNumber}`;
+const PDFViewerPage = ({ category, lang }) => {
+  const [numPages, setNumPages] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  // Success callback when PDF loads
+  function onDocumentLoadSuccess({ numPages }) {
+    setNumPages(numPages);
+    setLoading(false);
+  }
+
+  const changePage = (offset) => {
+    setPageNumber(prevPageNumber => prevPageNumber + offset);
+  };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)]">
+    <div className="flex flex-col h-full min-h-[600px]">
+      {/* Header & Paging Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight leading-none">
+          <h2 className="text-3xl font-black text-slate-900 uppercase tracking-tight">
             {lang === 'en' ? category.nameEn : category.nameEs}
           </h2>
-          <p className="text-slate-500 font-medium mt-1">{lang === 'en' ? 'Digital Catalog' : 'Catálogo Digital'}</p>
+          <p className="text-slate-500 font-medium">
+            {loading ? (lang === 'en' ? 'Loading...' : 'Cargando...') : `${numPages} ${lang === 'en' ? 'Pages' : 'Páginas'}`}
+          </p>
         </div>
+
         <div className="flex items-center gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <button disabled={pageNumber <= 1} onClick={() => setPageNumber(p => p - 1)} className="p-3 hover:bg-slate-50 disabled:opacity-30 rounded-xl text-blue-600 transition-colors"><ChevronLeft size={24} /></button>
-          <span className="px-4 font-black text-slate-700 min-w-[100px] text-center text-sm">{lang === 'en' ? 'PAGE' : 'PÁGINA'} {pageNumber} / {totalPages}</span>
-          <button disabled={pageNumber >= totalPages} onClick={() => setPageNumber(p => p + 1)} className="p-3 hover:bg-slate-50 disabled:opacity-30 rounded-xl text-blue-600 transition-colors"><ChevronRight size={24} /></button>
+          <button
+            disabled={pageNumber <= 1}
+            onClick={() => changePage(-1)}
+            className="p-3 hover:bg-slate-50 disabled:opacity-20 rounded-xl text-blue-600 transition-colors"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          
+          <span className="px-4 font-black text-slate-700 min-w-[120px] text-center text-sm">
+            {lang === 'en' ? 'PAGE' : 'PÁGINA'} {pageNumber} / {numPages || '--'}
+          </span>
+          
+          <button
+            disabled={pageNumber >= numPages}
+            onClick={() => changePage(1)}
+            className="p-3 hover:bg-slate-50 disabled:opacity-20 rounded-xl text-blue-600 transition-colors"
+          >
+            <ChevronRight size={24} />
+          </button>
         </div>
       </div>
-      <div className="flex-1 bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl overflow-hidden relative">
-        {/* CHANGED: Using <embed> for local files often prevents the auto-download bug in Chrome */}
-        {isLocalFile ? (
-          <embed 
-            key={finalUrl} 
-            src={finalUrl} 
-            type="application/pdf"
-            className="w-full h-full border-none rounded-[2.5rem]"
+
+      {/* PDF Display Area */}
+      <div className="flex-1 bg-slate-200 rounded-[2.5rem] border border-slate-200 shadow-inner overflow-auto flex justify-center p-4">
+        <Document
+          file={category.pdf} // Points to /filename.pdf in your public folder
+          onLoadError={(error) => console.error("Error loading PDF:", error)}
+          onLoadSuccess={onDocumentLoadSuccess}
+          loading={
+            <div className="flex flex-col items-center justify-center h-64">
+              <Loader2 className="animate-spin text-blue-600 mb-2" size={40} />
+              <p className="font-bold text-slate-400">Opening Catalog...</p>
+            </div>
+          }
+        >
+          <Page 
+            pageNumber={pageNumber} 
+            renderTextLayer={false} 
+            renderAnnotationLayer={false}
+            className="shadow-2xl"
+            // This ensures the PDF scales to fit its container width
+            width={Math.min(window.innerWidth * 0.8, 800)} 
           />
-        ) : (
-          <iframe 
-            key={finalUrl} 
-            src={finalUrl} 
-            className="w-full h-full border-none" 
-            title="PDF Viewer" 
-          />
-        )}
-        
-        {isLocalFile && (
-           <div className="absolute bottom-4 right-4 bg-blue-100 text-blue-800 text-[10px] px-3 py-1 rounded-full font-bold uppercase tracking-wider border border-blue-200 pointer-events-none">
-             Local Test Mode
-           </div>
-        )}
+        </Document>
       </div>
     </div>
   );
